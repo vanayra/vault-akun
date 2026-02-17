@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ultra Secure Family Vault</title>
+<title>Secure Family Vault</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 
@@ -71,7 +71,6 @@ box-shadow:0 5px 10px rgba(0,0,0,0.08);
 <h2>🔐 Family Vault</h2>
 <input type="password" id="masterPass" placeholder="Master Password">
 <button onclick="login()">Masuk</button>
-<button onclick="biometricLogin()">🔓 Login Fingerprint</button>
 <p id="error" style="color:red"></p>
 </div>
 </div>
@@ -80,8 +79,6 @@ box-shadow:0 5px 10px rgba(0,0,0,0.08);
 <div id="mainPage">
 
 <h2>📁 Vault Akun</h2>
-
-<button onclick="enableBiometric()">Aktifkan Biometric Unlock</button>
 
 <input type="text" id="searchBox" placeholder="Cari akun..." onkeyup="tampilkanAkun()">
 
@@ -100,7 +97,6 @@ box-shadow:0 5px 10px rgba(0,0,0,0.08);
 <input type="text" id="username" placeholder="Username">
 <input type="text" id="password" placeholder="Password">
 
-<button onclick="generatePassword()">🎲 Generate Password</button>
 <button onclick="tambahAkun()">Tambah Akun</button>
 
 <h3>Backup</h3>
@@ -135,40 +131,11 @@ error.innerText="Minimal 6 karakter";
 return;
 }
 
-sessionStorage.setItem("vaultSession", masterPassword);
-
 loginPage.style.display="none";
 mainPage.style.display="block";
 
 resetIdleTimer();
 tampilkanAkun();
-}
-
-/* ===== BIOMETRIC LOGIN ===== */
-
-function biometricLogin(){
-
-let storedKey = localStorage.getItem("biometricKey");
-
-if(!storedKey){
-alert("Biometric belum diaktifkan");
-return;
-}
-
-masterPassword = storedKey;
-
-loginPage.style.display="none";
-mainPage.style.display="block";
-
-resetIdleTimer();
-tampilkanAkun();
-}
-
-/* ===== ENABLE BIOMETRIC ===== */
-
-function enableBiometric(){
-localStorage.setItem("biometricKey", masterPassword);
-alert("Biometric berhasil diaktifkan di device ini");
 }
 
 /* ===== AUTO LOCK ===== */
@@ -252,20 +219,6 @@ function copyPass(i){
 let pass = decrypt(akun[i].password);
 navigator.clipboard.writeText(pass);
 alert("Password disalin");
-}
-
-/* ===== PASSWORD GENERATOR ===== */
-
-function generatePassword(){
-
-let chars="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
-let pass="";
-
-for(let i=0;i<14;i++){
-pass += chars[Math.floor(Math.random()*chars.length)];
-}
-
-password.value = pass;
 }
 
 /* ===== HAPUS ===== */
