@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vault Akun</title>
+
+<style>
+body{
+font-family:Segoe UI;
+margin:0;
+background:#f2f4f8;
+}
+
+/* LOGIN */
+#loginPage{
+height:100vh;
+display:flex;
+justify-content:center;
+align-items:center;
+}
+
+.card{
+background:white;
+padding:40px;
+border-radius:15px;
+box-shadow:0 10px 20px rgba(0,0,0,0.1);
+width:300px;
+text-align:center;
+}
+
+input, select{
+width:100%;
+padding:10px;
+margin-top:10px;
+border-radius:8px;
+border:1px solid #ccc;
+}
+
+button{
+margin-top:15px;
+padding:10px;
+width:100%;
+border:none;
+border-radius:8px;
+background:#4CAF50;
+color:white;
+cursor:pointer;
+}
+
+/* MAIN */
+#mainPage{
+display:none;
+padding:20px;
+}
+
+.header{
+font-size:26px;
+font-weight:bold;
+margin-bottom:15px;
+}
+
+.account-card{
+background:white;
+padding:15px;
+border-radius:10px;
+margin-top:10px;
+box-shadow:0 5px 10px rgba(0,0,0,0.08);
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginPage">
+<div class="card">
+<h2>🔐 Vault Login</h2>
+<input type="password" id="loginPass" placeholder="Password">
+<button onclick="login()">Masuk</button>
+<p id="error" style="color:red"></p>
+</div>
+</div>
+
+<!-- MAIN -->
+<div id="mainPage">
+
+<div class="header">📁 Vault Akun</div>
+
+<input type="text" id="searchBox" placeholder="🔎 Cari akun..." onkeyup="tampilkanAkun()">
+
+<div id="accountList"></div>
+
+<!-- FORM TAMBAH -->
+<h3>Tambah Akun</h3>
+
+<select id="kategori">
+<option>Email</option>
+<option>Social Media</option>
+<option>Bank</option>
+<option>Game</option>
+<option>Lainnya</option>
+</select>
+
+<input type="text" id="nama" placeholder="Nama Platform">
+<input type="text" id="username" placeholder="Username / Email">
+<input type="text" id="password" placeholder="Password">
+
+<button onclick="tambahAkun()">Tambah Akun</button>
+
+<!-- BACKUP -->
+<h3>Backup Data</h3>
+<button onclick="exportData()">Export Backup</button>
+<input type="file" onchange="importData(event)">
+
+</div>
+
+<script>
+
+const PASSWORD = "rizky123";
+let akun = JSON.parse(localStorage.getItem("akun")) || [];
+
+function login(){
+let pass = document.getElementById("loginPass").value;
+
+if(pass === PASSWORD){
+loginPage.style.display="none";
+mainPage.style.display="block";
+tampilkanAkun();
+}else{
+error.innerText="Password salah";
+}
+}
+
+function tambahAkun(){
+
+let data = {
+kategori:kategori.value,
+nama:nama.value,
+username:username.value,
+password:password.value
+};
+
+akun.push(data);
+localStorage.setItem("akun", JSON.stringify(akun));
+tampilkanAkun();
+
+nama.value="";
+username.value="";
+password.value="";
+}
+
+function tampilkanAkun(){
+
+let keyword = searchBox.value.toLowerCase();
+accountList.innerHTML="";
+
+akun.forEach((a,i)=>{
+
+if(a.nama.toLowerCase().includes(keyword)){
+
+accountList.innerHTML+=`
+<div class="account-card">
+<b>${a.nama}</b> (${a.kategori})<br>
+User : ${a.username}<br>
+Password : <span id="pass${i}">••••••</span><br>
+
+<button onclick="togglePass(${i})">Show/Hide</button>
+<button onclick="hapusAkun(${i})">Hapus</button>
+</div>`;
+}
+});
+}
+
+function togglePass(i){
+let span = document.getElementById("pass"+i);
+
+if(span.innerText==="••••••"){
+span.innerText = akun[i].password;
+}else{
+span.innerText="••••••";
+}
+}
+
+function hapusAkun(i){
+akun.splice(i,1);
+localStorage.setItem("akun", JSON.stringify(akun));
+tampilkanAkun();
+}
+
+/* EXPORT */
+function exportData(){
+
+let dataStr = JSON.stringify(akun);
+let blob = new Blob([dataStr], {type:"application/json"});
+let a = document.createElement("a");
+
+a.href = URL.createObjectURL(blob);
+a.download = "backupVault.json";
+a.click();
+}
+
+/* IMPORT */
+function importData(event){
+
+let file = event.target.files[0];
+let reader = new FileReader();
+
+reader.onload = function(e){
+akun = JSON.parse(e.target.result);
+localStorage.setItem("akun", JSON.stringify(akun));
+tampilkanAkun();
+}
+
+reader.readAsText(file);
+}
+
+</script>
+</body>
+</html>
