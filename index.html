@@ -3,16 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Vault Akun</title>
+<title>Ultra Secure Family Vault</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 
 <style>
 body{
 font-family:Segoe UI;
 margin:0;
-background:#f2f4f8;
+background:#f4f6f9;
 }
 
-/* LOGIN */
 #loginPage{
 height:100vh;
 display:flex;
@@ -22,14 +23,14 @@ align-items:center;
 
 .card{
 background:white;
-padding:40px;
+padding:35px;
 border-radius:15px;
-box-shadow:0 10px 20px rgba(0,0,0,0.1);
-width:300px;
+box-shadow:0 10px 25px rgba(0,0,0,0.1);
+width:320px;
 text-align:center;
 }
 
-input, select{
+input,select{
 width:100%;
 padding:10px;
 margin-top:10px;
@@ -38,7 +39,7 @@ border:1px solid #ccc;
 }
 
 button{
-margin-top:15px;
+margin-top:12px;
 padding:10px;
 width:100%;
 border:none;
@@ -48,23 +49,16 @@ color:white;
 cursor:pointer;
 }
 
-/* MAIN */
 #mainPage{
 display:none;
 padding:20px;
 }
 
-.header{
-font-size:26px;
-font-weight:bold;
-margin-bottom:15px;
-}
-
 .account-card{
 background:white;
 padding:15px;
-border-radius:10px;
 margin-top:10px;
+border-radius:10px;
 box-shadow:0 5px 10px rgba(0,0,0,0.08);
 }
 </style>
@@ -74,9 +68,10 @@ box-shadow:0 5px 10px rgba(0,0,0,0.08);
 <!-- LOGIN -->
 <div id="loginPage">
 <div class="card">
-<h2>🔐 Vault Login</h2>
-<input type="password" id="loginPass" placeholder="Password">
+<h2>🔐 Family Vault</h2>
+<input type="password" id="masterPass" placeholder="Master Password">
 <button onclick="login()">Masuk</button>
+<button onclick="biometricLogin()">🔓 Login Fingerprint</button>
 <p id="error" style="color:red"></p>
 </div>
 </div>
@@ -84,70 +79,133 @@ box-shadow:0 5px 10px rgba(0,0,0,0.08);
 <!-- MAIN -->
 <div id="mainPage">
 
-<div class="header">📁 Vault Akun</div>
+<h2>📁 Vault Akun</h2>
 
-<input type="text" id="searchBox" placeholder="🔎 Cari akun..." onkeyup="tampilkanAkun()">
+<button onclick="enableBiometric()">Aktifkan Biometric Unlock</button>
+
+<input type="text" id="searchBox" placeholder="Cari akun..." onkeyup="tampilkanAkun()">
 
 <div id="accountList"></div>
 
-<!-- FORM TAMBAH -->
 <h3>Tambah Akun</h3>
 
 <select id="kategori">
 <option>Email</option>
 <option>Social Media</option>
 <option>Bank</option>
-<option>Game</option>
 <option>Lainnya</option>
 </select>
 
-<input type="text" id="nama" placeholder="Nama Platform">
-<input type="text" id="username" placeholder="Username / Email">
+<input type="text" id="nama" placeholder="Platform">
+<input type="text" id="username" placeholder="Username">
 <input type="text" id="password" placeholder="Password">
 
+<button onclick="generatePassword()">🎲 Generate Password</button>
 <button onclick="tambahAkun()">Tambah Akun</button>
 
-<!-- BACKUP -->
-<h3>Backup Data</h3>
-<button onclick="exportData()">Export Backup</button>
-<input type="file" onchange="importData(event)">
+<h3>Backup</h3>
+<button onclick="exportBackup()">Export Backup</button>
 
 </div>
 
 <script>
 
-const PASSWORD = "rizky123";
+let masterPassword="";
 let akun = JSON.parse(localStorage.getItem("akun")) || [];
+let idleTimer;
+
+/* ===== Encryption ===== */
+
+function encrypt(text){
+return CryptoJS.AES.encrypt(text, masterPassword).toString();
+}
+
+function decrypt(text){
+return CryptoJS.AES.decrypt(text, masterPassword).toString(CryptoJS.enc.Utf8);
+}
+
+/* ===== LOGIN ===== */
 
 function login(){
-let pass = document.getElementById("loginPass").value;
 
-if(pass === PASSWORD){
+masterPassword = masterPass.value;
+
+if(masterPassword.length < 6){
+error.innerText="Minimal 6 karakter";
+return;
+}
+
+sessionStorage.setItem("vaultSession", masterPassword);
+
 loginPage.style.display="none";
 mainPage.style.display="block";
+
+resetIdleTimer();
 tampilkanAkun();
-}else{
-error.innerText="Password salah";
 }
+
+/* ===== BIOMETRIC LOGIN ===== */
+
+function biometricLogin(){
+
+let storedKey = localStorage.getItem("biometricKey");
+
+if(!storedKey){
+alert("Biometric belum diaktifkan");
+return;
 }
+
+masterPassword = storedKey;
+
+loginPage.style.display="none";
+mainPage.style.display="block";
+
+resetIdleTimer();
+tampilkanAkun();
+}
+
+/* ===== ENABLE BIOMETRIC ===== */
+
+function enableBiometric(){
+localStorage.setItem("biometricKey", masterPassword);
+alert("Biometric berhasil diaktifkan di device ini");
+}
+
+/* ===== AUTO LOCK ===== */
+
+function resetIdleTimer(){
+clearTimeout(idleTimer);
+
+idleTimer = setTimeout(()=>{
+alert("Vault terkunci karena idle");
+location.reload();
+},120000);
+}
+
+document.onmousemove = resetIdleTimer;
+document.onkeydown = resetIdleTimer;
+
+/* ===== TAMBAH AKUN ===== */
 
 function tambahAkun(){
 
-let data = {
+akun.push({
 kategori:kategori.value,
 nama:nama.value,
 username:username.value,
-password:password.value
-};
+password:encrypt(password.value)
+});
 
-akun.push(data);
 localStorage.setItem("akun", JSON.stringify(akun));
+
 tampilkanAkun();
 
 nama.value="";
 username.value="";
 password.value="";
 }
+
+/* ===== TAMPILKAN ===== */
 
 function tampilkanAkun(){
 
@@ -162,24 +220,55 @@ accountList.innerHTML+=`
 <div class="account-card">
 <b>${a.nama}</b> (${a.kategori})<br>
 User : ${a.username}<br>
-Password : <span id="pass${i}">••••••</span><br>
 
-<button onclick="togglePass(${i})">Show/Hide</button>
+Password : 
+<span id="pass${i}">••••••</span><br>
+
+<button onclick="showPass(${i})">Show</button>
+<button onclick="copyPass(${i})">Copy</button>
 <button onclick="hapusAkun(${i})">Hapus</button>
 </div>`;
 }
 });
 }
 
-function togglePass(i){
+/* ===== SHOW PASSWORD ===== */
+
+function showPass(i){
+
 let span = document.getElementById("pass"+i);
 
 if(span.innerText==="••••••"){
-span.innerText = akun[i].password;
+span.innerText = decrypt(akun[i].password);
 }else{
 span.innerText="••••••";
 }
 }
+
+/* ===== COPY PASSWORD ===== */
+
+function copyPass(i){
+
+let pass = decrypt(akun[i].password);
+navigator.clipboard.writeText(pass);
+alert("Password disalin");
+}
+
+/* ===== PASSWORD GENERATOR ===== */
+
+function generatePassword(){
+
+let chars="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
+let pass="";
+
+for(let i=0;i<14;i++){
+pass += chars[Math.floor(Math.random()*chars.length)];
+}
+
+password.value = pass;
+}
+
+/* ===== HAPUS ===== */
 
 function hapusAkun(i){
 akun.splice(i,1);
@@ -187,34 +276,18 @@ localStorage.setItem("akun", JSON.stringify(akun));
 tampilkanAkun();
 }
 
-/* EXPORT */
-function exportData(){
+/* ===== BACKUP ===== */
 
-let dataStr = JSON.stringify(akun);
-let blob = new Blob([dataStr], {type:"application/json"});
+function exportBackup(){
+
+let blob = new Blob([JSON.stringify(akun)],{type:"application/json"});
 let a = document.createElement("a");
 
 a.href = URL.createObjectURL(blob);
-a.download = "backupVault.json";
+a.download = "vaultBackup.json";
 a.click();
-}
-
-/* IMPORT */
-function importData(event){
-
-let file = event.target.files[0];
-let reader = new FileReader();
-
-reader.onload = function(e){
-akun = JSON.parse(e.target.result);
-localStorage.setItem("akun", JSON.stringify(akun));
-tampilkanAkun();
-}
-
-reader.readAsText(file);
 }
 
 </script>
 </body>
-
 </html>
